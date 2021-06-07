@@ -1,0 +1,78 @@
+Beispiel Cypher Queries:
+
+MATCH (b:LogPos)-[a:HAS_CLC18]-(m:CLC)-[t:IS_IN]-(s:Struktur) 
+RETURN b,a,m,t,s;
+-> Gibt Funkzellen, den CLC18 & Struktur als Graph an
+
+match (str:Struktur) return str;
+-> gibt nur Strukturen an
+
+MATCH (p:Person {nummer:'1234'})-[r:VISITED_AT]-(b:LogPos)-[a:HAS_CLC18]-(m:CLC)-[t:IS_IN]-(s:Struktur) 
+RETURN p,r,b,a,m,t,s;
+-> gibt kompletten Bewegungsablauf der Person als Graph wieder
+
+MATCH (p:Person {nummer:'1234'})-[r:VISITED_AT]-(b:LogPos)-[a:HAS_CLC18]-(m:CLC)-[t:IS_IN]-(s:Struktur) 
+RETURN p,r,b,a,m,t,s; 
+-> kompletter Bewegungsablauf der Person
+
+MATCH (p:Person)-[:VISITED_AT]->(l:LogPos)-[:HAS_CLC18]->(c:CLC)-[:IS_IN]->(s:Struktur)
+WITH p.nummer as Person, count(distinct l.name) as LPs_Count, collect(distinct l.name) as LPs, collect(distinct s.name) as Strukturen
+WHERE LPs_Count >= 3 
+AND "urbane Struktur" IN Strukturen
+AND "Industrie" IN Strukturen
+AND NOT "Wiesen & Weiden" IN Strukturen
+AND NOT "Nicht bewaessertes Ackerland" IN Strukturen
+AND NOT "Wiesen & Weiden" IN Strukturen
+AND NOT "Buschland und/oder Krautvegetation"
+RETURN Person,LPs_Count, LPs, Strukturen 
+ORDER BY LPs_Count;
+-> gibt alle Personen aus, die mind. unterschiedliche 3 Funkzellen in den angegeben Gebieten besucht haben, ohne dabei in den anderen gewesen zu sein (Tabellenform)
+
+MATCH (p:Person)-[:VISITED_AT]->(l:LogPos)-[:HAS_CLC18]->(c:CLC)-[:IS_IN]->(s:Struktur)
+WITH p.nummer as person, count(distinct l.name) as LPs_Count, collect(distinct l.name) as LPs, collect(distinct s.name) as Strukturen
+WHERE "urbane Struktur" IN Strukturen
+AND "Industrie" IN Strukturen
+AND NOT "Wiesen & Weiden" IN Strukturen
+AND NOT "Nicht bewaessertes Ackerland" IN Strukturen
+AND NOT "Wiesen & Weiden" IN Strukturen
+AND NOT "Buschland" IN Strukturen
+RETURN person,LPs_Count, LPs, Strukturen 
+ORDER BY LPs_Count;
+-> gibt alle Personen aus, die in den angegeben Gebieten und schließt die anderen Gebiete aus
+
+MATCH (p:Person)-[:VISITED_AT]->(l:LogPos)-[:HAS_CLC18]->(c:CLC)-[:IS_IN]->(s:Struktur)
+WITH p.nummer as person,count(distinct l.name) as LPs_Count, collect(distinct l.name) as LPs,count (distinct s.name) as Strk_Count, collect(distinct s.name) as Strukturen
+WHERE LPs_Count >= 3 AND Strk_Count >=3 
+AND ANY (x IN Strukturen WHERE x = "Industrie")
+RETURN person, LPs, Strukturen 
+ORDER BY LPs_Count;
+-> gibt alle Personen aus, die mind. 3 unterschiedliche Funkzellen und 3 unterschiedliche Strukturen besucht hat, wobei sie dabei mindestens 1mal im Industriegebiet war
+
+MATCH (p:Person)-[:VISITED_AT]->(l:LogPos)
+WITH p.nummer as person, count(*) as Visits, collect(distinct l.name) as LPs, count(distinct l.name) as LPs_Count
+WHERE Visits > 1000 AND LPs_Count >= 4
+RETURN person, LPs, Visits, LPs_Count
+ORDER BY Visits DESC;
+-> gibt Personen aus, die mind. 1000 Besuche ab 4 unterschiedlichen Funkmasten haben (Tabelle)
+
+MATCH (a:Person) WHERE ((a)-[:VISITED_AT]->(:LogPos {name:'9.xxx 51.xxx - xxx'})) 
+RETURN a;
+-> gibt alle Personen aus, die diese Funkzelle besucht haben 
+
+MATCH (a:Person) WHERE ((a)-[:VISITED_AT]->(:LogPos {name:'9.xxx 51.xxx - xxx'})) 
+AND ((a)-[:VISITED_AT]->(:LogPos {name:'9.xxx 51.xxx - xx'}))
+AND ((a)-[:VISITED_AT]->(:LogPos {name:'9.xxx 51.xxx - xxx'}))
+AND ((a)-[:VISITED_AT]->(:LogPos {name:'9.xxx 51.xxx - xxx'}))
+RETURN a;
+-> gibt alle Personen aus, die mindestens diese 3 Funkzellen besucht haben 
+
+MATCH (a:Person) -[v:VISITED_AT]->(lp:LogPos)
+WHERE v.dienst = "Telefonie"
+RETURN a,v,lp
+LIMIT 25;
+-> Gibt die ersten 25 Personen aus, die telefoniert haben (ganzer Datensatz)
+
+MATCH (p:Person {nummer:'1234'})-[r:VISITED_AT]-(b:LogPos)-[a:HAS_CLC18]-(m:CLC)-[t:IS_IN]-(s:Struktur) 
+WHERE r.dienst = "Telefonie"
+RETURN p,r,b,a,m,t,s;
+-> Gibt alle Telefonate der Person aus (Abweichungen von Graph und Tabelle können auftreten..)
