@@ -1,0 +1,17 @@
+CREATE Constraint ON (p:Person) ASSERT p.nummer IS Unique;
+
+// Import CSV, Create Nodes, Relationships
+// CSV Datei muss dabei im import Ordner von Neo4j sein
+:auto USING PERIODIC COMMIT 1000
+LOAD CSV WITH HEADERS FROM "file:///XXX.csv" AS row 
+MERGE (person:Person {nummer: row.A_Nummer})
+MERGE (logpos:LogPos {name: row.Funkzelle, lon: row.A_Laenge, lat: row.A_Breite, azi: coalesce(row.A_Richtung, "Unknown")})
+MERGE (strk:Struktur {name: row.Struktur})
+MERGE (clc:CLC {nummer: row.CLC18})
+CREATE (person)-[:VISITED_AT {date: row.Datum, start: row.Start, end: row.Ende, dienst: row.Dienst}]->(logpos)
+MERGE (logpos)-[:HAS_CLC18]->(clc)
+MERGE (clc)-[:IS_IN]->(strk) 
+// MERGE wird hier verwendet, um Duplikate in den Relationships zu verhindern
+
+// Drop Constraints, da diese nur für Import der Relationships nötig waren
+DROP CONSTRAINT ON (person:Person) ASSERT person.nummer IS Unique;
