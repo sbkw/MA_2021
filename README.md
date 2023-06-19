@@ -1,5 +1,9 @@
 # MA_2021
 
+Update 06/2023: This project will be discontinued and archived.
+
+
+ 
 Python3 needs to be installed. To get scripts working, do the following steps:
 
 1. pip3 install -r requirements.txt
